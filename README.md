@@ -1,3 +1,4 @@
+[![Gem Version](https://badge.fury.io/rb/EzSSL.svg)](https://badge.fury.io/rb/EzSSL)
 # EzSSL
 A ruby extension to make secure TCPSocket connections
 
