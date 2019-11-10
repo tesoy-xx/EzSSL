@@ -1,6 +1,7 @@
 require 'openssl'
 require 'socket'
 module EzSSL
+
   class Server
 
     attr_reader :read
@@ -26,6 +27,11 @@ module EzSSL
       end
       return Handle.new(client,key,self)
     end
+
+    # Decrypt a message without direct access to the private key
+    # 
+    # @param msg [String] The encrypted message
+    # @return [String] The decrypted message
     def decrypt(msg)
       return @pair.private_decrypt(msg)
     end
@@ -51,6 +57,14 @@ module EzSSL
       @key=OpenSSL::PKey::RSA.new(key)
     end
 
+    # Returns the maximum length of string that can be encypted with a given key
+    # 
+    # @param [Object] The OpenSSL object to test
+    # @return [Integer] The maximum length of string that can be encrypted with the given key
+    def max_len(key)
+      return key.public_encrypt('test').length
+    end
+
     # Sends a string (msg) to the server
     #
     # @param msg [String] The sting being sent to the server
@@ -68,14 +82,6 @@ module EzSSL
       msg=@socket.read(@read)
       return @pair.private_decrypt(msg)
     end
-  end
-
-  # Returns the max length of data that can be excrypted with a given key
-  # 
-  # @param key [Object] The OpenSSL::PKey::RSA object
-  # @return [Integer] The max length of text that can be encrypted with the given key
-  def max_len(key)
-    key.public_encrypt('lol').length
   end
 
   private
@@ -100,6 +106,14 @@ module EzSSL
       raise ArgumentError, "Message is too large to encrypt with the current key. (Max Length:#{max_len(@key)})" if msg.length > max_len(@key)
       @client.write @key.public_encrypt(msg)
       return nil
+    end
+
+    # Returns the maximum length of string that can be encypted with a given key
+    # 
+    # @param [Object] The OpenSSL object to test
+    # @return [Integer] The maximum length of string that can be encrypted with the given key
+    def max_len(key)
+      return key.public_encrypt('test').length
     end
 
     # Recieves a string from the client
