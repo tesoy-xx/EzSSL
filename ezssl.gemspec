@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'EzSSL'
-  s.version     = '0.0.1'
+  s.version     = '0.0.5'
   s.licenses    = ['MIT']
   s.summary     = "Easily maie secure socket connections"
   s.description = "OpenSSL is confusing to people new to socket programming, so i aim to make the process easier"

@@ -2,6 +2,7 @@ require 'openssl'
 require 'socket'
 module EzSSL
   class Server
+
     attr_reader :read
     def initialize(ip,port,length=2048)
       @socket=TCPServer.open(ip,port)
@@ -9,6 +10,10 @@ module EzSSL
       @pubkey=@pair.public_key
       @read=@pubkey.public_encrypt('hello').length
     end
+
+    # Accepts a client connection, and returns a Handle object for communication
+    # 
+    # @return [Object] The Handle object
     def accept()
       client=@socket.accept
       client.puts @pubkey.to_s
@@ -27,6 +32,9 @@ module EzSSL
   end
 
   class Client
+
+    attr_reader :key, :pubkey
+
     def initialize(ip,port,length=2048)
       @pair=OpenSSL::PKey::RSA.new(length)
       @pubkey=@pair.public_key
@@ -42,32 +50,70 @@ module EzSSL
       @socket.puts @pubkey.to_s
       @key=OpenSSL::PKey::RSA.new(key)
     end
+
+    # Sends a string (msg) to the server
+    #
+    # @param msg [String] The sting being sent to the server
+    # @raise [ArgumentError] if the message being sent is too large for the OpenSSL::PKey::RSA object
     def puts(msg)
+      raise ArgumentError, "Message is too large to encrypt with the current key. (Max Length:#{max_len(@key)})" if msg.length > max_len(@key)
       @socket.write @key.public_encrypt(msg)
       return nil
     end
+
+    # Recieves a string from the server
+    # 
+    # @return [String] The message from the server
     def gets()
       msg=@socket.read(@read)
       return @pair.private_decrypt(msg)
     end
   end
 
+  # Returns the max length of data that can be excrypted with a given key
+  # 
+  # @param key [Object] The OpenSSL::PKey::RSA object
+  # @return [Integer] The max length of text that can be encrypted with the given key
+  def max_len(key)
+    key.public_encrypt('lol').length
+  end
+
   private
+
+  # The object that allows communication from Server to Client.
   class Handle
+
     def initialize(client,key,server)
+      # The represented client
       @client=client
+      # The public key of the represented client
       @key=OpenSSL::PKey::RSA.new(key)
+      @read=@key.public_encrypt('test lol').length
       @server=server
     end
+
+    # Sends a string (msg) to the represented client
+    #  
+    # @param msg [String] The message being sent to the client
+    # @raise [ArgumentError] if the message being sent is too large for the OpenSSL::PKey::RSA object
     def puts(msg)
+      raise ArgumentError, "Message is too large to encrypt with the current key. (Max Length:#{max_len(@key)})" if msg.length > max_len(@key)
       @client.write @key.public_encrypt(msg)
+      return nil
     end
+
+    # Recieves a string from the client
+    # 
+    # @return [String] The message sent from the client
     def gets()
       msg=@client.read(@server.read)
       return @server.decrypt(msg)
     end
+
+    # Closes the client remotely
     def close
       @client.close
     end
+
   end
 end
